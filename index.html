@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>どうぶつカートラッシュ!</title>
+<meta name="description" content="どうぶつたちがカートで走る、ドット絵のレースゲーム。ブラウザですぐ遊べます。">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; --bg: #141a3a; --line: #ffffff; --accent: #ffd23a; --accent2: #ff5a7a; --ink: #000; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: #fff;
+    font-family: 'DotGothic16', 'Yu Gothic UI', 'Meiryo', 'Hiragino Sans', sans-serif; user-select: none; }
+  canvas#gl, canvas#hud { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  canvas#gl { image-rendering: pixelated; image-rendering: crisp-edges; }
+  #hud { pointer-events: none; }
+  img, canvas.face { image-rendering: pixelated; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .hidden { display: none !important; }
+  /* ドット絵風のウィンドウ(角ばった二重線) */
+  .panel { background: var(--bg); border: 4px solid var(--line); outline: 4px solid var(--ink); box-shadow: 8px 8px 0 rgba(0,0,0,0.6);
+    padding: 18px 22px; max-height: calc(100vh - 40px); overflow: auto; }
+  #menu .panel { width: min(1000px, 100%); }
+  .banner { display: block; width: 100%; aspect-ratio: 3 / 1; object-fit: cover; object-position: center 55%; border: 4px solid #000; margin-bottom: 8px; background: #3a8ad8; }
+  .logo { margin: 0 0 4px; text-align: center; font-size: clamp(30px, 5.4vw, 56px); font-weight: 400; letter-spacing: 2px; color: #ffe14a;
+    text-shadow: 4px 0 #b3400a, -4px 0 #b3400a, 0 4px #b3400a, 0 -4px #b3400a, 4px 4px #b3400a, -4px -4px #b3400a, 4px -4px #b3400a, -4px 4px #b3400a, 8px 8px #000; }
+  .logo small { display: block; font-size: 0.34em; letter-spacing: 8px; color: #fff; text-shadow: 3px 3px #000; margin-top: 6px; }
+  h2 { font-size: 16px; margin: 14px 0 8px; color: #9fe0ff; letter-spacing: 2px; font-weight: 400; }
+  h2::before { content: '▶ '; color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .card { background: #222a55; border: 3px solid #5a6aa8; padding: 8px 10px; text-align: left; transition: transform .08s; border-radius: 0; }
+  .card:hover { transform: translateY(-2px); background: #2c3570; }
+  .card.on { border-color: var(--accent); background: #4a3f1c; box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--accent); }
+  .driver { display: grid; grid-template-columns: 56px 1fr; column-gap: 10px; align-items: center; }
+  .avatar { grid-row: span 2; width: 56px; height: 56px; border: 3px solid #000; }
+  .nm { font-size: 18px; }
+  .nm small { font-size: 12px; color: #ffd23a; margin-left: 6px; }
+  .ds { font-size: 12px; color: #c8d0e0; }
+  .stat { grid-column: span 2; display: grid; grid-template-columns: 64px 1fr; align-items: center; font-size: 11px; color: #aab; margin-top: 3px; }
+  .stat i { height: 8px; background: #000; border: 1px solid #556; overflow: hidden; }
+  .stat b { display: block; height: 100%; background: repeating-linear-gradient(90deg, #5ad1ff 0 6px, #2a6fd6 6px 8px); }
+  .stat:first-of-type { margin-top: 8px; }
+  .course { min-height: 86px; }
+  .course.meadow { background: #2f6b3a; }
+  .course.desert { background: #8a4f2a; }
+  .course.city { background: #2a1f5a; }
+  .st { color: var(--accent); font-size: 14px; margin: 2px 0; }
+  .pill { background: #222a55; border: 3px solid #5a6aa8; padding: 10px; font-size: 17px; border-radius: 0; }
+  .pill.on { border-color: var(--accent); background: #4a3f1c; }
+  .big { display: block; width: 100%; margin-top: 16px; padding: 12px; font-size: 26px; letter-spacing: 6px; border: 4px solid #000; border-radius: 0;
+    background: #ffb020; color: #3a1600; box-shadow: inset -6px -6px 0 #c76a0a, inset 6px 6px 0 #ffe27a, 6px 6px 0 #000; }
+  .big:hover { filter: brightness(1.1); }
+  .big:active { transform: translate(3px, 3px); box-shadow: inset -6px -6px 0 #c76a0a, inset 6px 6px 0 #ffe27a, 3px 3px 0 #000; }
+  .sub { display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .help { font-size: 12.5px; color: #c8d0e0; line-height: 1.9; }
+  .help kbd { display: inline-block; min-width: 22px; padding: 0 6px; border: 2px solid #fff; border-bottom-width: 4px; background: #333a66; font-family: inherit; font-size: 12px; text-align: center; }
+  .ghost { background: transparent; border: 3px solid #fff; padding: 8px 14px; border-radius: 0; }
+  .credit { font-size: 11px; color: #8890b0; margin-top: 10px; text-align: right; }
+  #results .panel, #pause .panel { width: min(540px, 100%); text-align: center; }
+  #resultTitle { font-size: 30px; margin: 4px 0 14px; color: var(--accent); text-shadow: 3px 3px #000; }
+  table { width: 100%; border-collapse: collapse; font-size: 17px; }
+  td { padding: 4px 8px; border-bottom: 2px dotted #556; text-align: left; vertical-align: middle; }
+  td small { font-size: 12px; color: #aab; margin-left: 4px; }
+  td.rk { width: 44px; text-align: center; }
+  td.tm { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.me td { background: #4a3f1c; }
+  canvas.face { width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .btns .big { margin-top: 0; font-size: 19px; letter-spacing: 1px; }
+  .btns .ghost { font-size: 17px; }
+  #pause h2 { font-size: 30px; color: #fff; margin: 4px 0 16px; }
+  #pause h2::before { content: ''; }
+  #pause .big { margin-top: 10px; }
+  #err { display: none; position: fixed; left: 16px; right: 16px; bottom: 16px; padding: 12px; background: #a01c2c; font-size: 14px; z-index: 10; border: 3px solid #fff; }
+  @media (max-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } .row { grid-template-columns: 1fr; } .panel { padding: 12px; } }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+
+<div id="menu" class="overlay">
+  <div class="panel">
+    <img class="banner" src="assets/banner.png" alt="カートで走るどうぶつたち">
+    <h1 class="logo">どうぶつカートラッシュ!<small>ANIMAL KART RUSH</small></h1>
+    <h2>どうぶつをえらぶ</h2>
+    <div id="drivers" class="grid"></div>
+    <h2>コースをえらぶ</h2>
+    <div id="courses" class="row"></div>
+    <h2>むずかしさ</h2>
+    <div id="diffs" class="row"></div>
+    <button id="start" class="big">スタート!</button>
+    <div class="sub">
+      <div class="help">
+        <kbd>↑</kbd> アクセル <kbd>↓</kbd> ブレーキ <kbd>←</kbd><kbd>→</kbd> ハンドル(WASD も可)<br>
+        <kbd>Space</kbd> ジャンプ&ドリフト(曲がりながら押しっぱなし → 離すとターボ)<br>
+        <kbd>Z</kbd> アイテム(<kbd>↓</kbd>+<kbd>Z</kbd> で後ろへ) <kbd>C</kbd> 後ろを見る <kbd>Esc</kbd> ポーズ <kbd>M</kbd> 音のオン/オフ ・ ゲームパッド対応
+      </div>
+      <button id="muteBtn" class="ghost">🔊 音: オン</button>
+    </div>
+    <div class="credit">元のゲーム「KART RUSH!」を作者の了承を得て改作 ・ ドット絵: Codex で生成 ・ 音楽と効果音: プログラムで合成</div>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <div class="panel">
+    <h2>ポーズ</h2>
+    <button id="resume" class="big">つづける</button>
+    <div class="btns" style="margin-top:12px"><button id="pRetry" class="ghost">やりなおす</button><button id="pMenu" class="ghost">メニューへ</button></div>
+  </div>
+</div>
+
+<div id="results" class="overlay hidden">
+  <div class="panel">
+    <div id="resultTitle"></div>
+    <table><tbody id="resultTable"></tbody></table>
+    <div class="btns"><button id="retry" class="big">もう一度</button><button id="toMenu" class="ghost">メニューへ</button></div>
+  </div>
+</div>
+
+<div id="err"></div>
+
+<script src="js/core.js"></script>
+<script src="js/atlas.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/track.js"></script>
+<script src="js/kart.js"></script>
+<script src="js/items.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

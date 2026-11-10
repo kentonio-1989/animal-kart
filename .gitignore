@@ -1,0 +1,6 @@
+# Codex が出した生の画像(大きいので公開しない。tools/build_sprites.py の入力)
+_art_raw/
+# 元のゲームの控え
+_original_kart_rush.html
+.claude/
+__pycache__/
