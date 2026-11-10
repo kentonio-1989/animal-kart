@@ -47,25 +47,32 @@ class HUD {
     this.text(fmtTime(p.finished ? p.finishTime : g.raceTime), W - 30 * u, 105 * u, 34 * u, '#ffe9a8', 'right');
     // 順位
     const rk = g.rankOf(p), rc = rk === 1 ? '#ffd23a' : rk === 2 ? '#dfe6f0' : rk === 3 ? '#ff9f5a' : '#ffffff';
-    this.text(String(rk), W - 120 * u, H - 95 * u, 150 * u, rc, 'right', 0.1);
-    this.text('位', W - 40 * u, H - 70 * u, 60 * u, rc, 'right', 0.12);
+    if (this.touch) {
+      this.text(String(rk), 250 * u, 80 * u, 110 * u, rc, 'right', 0.1);
+      this.text('位', 310 * u, 100 * u, 44 * u, rc, 'right', 0.12);
+    } else {
+      this.text(String(rk), W - 120 * u, H - 95 * u, 150 * u, rc, 'right', 0.1);
+      this.text('位', W - 40 * u, H - 70 * u, 60 * u, rc, 'right', 0.12);
+    }
     // スピード
-    this.text(`${Math.round(Math.abs(p.speed) * 3.9)}`, W / 2, H - 70 * u, 46 * u, '#fff', 'center');
-    this.text('km/h', W / 2, H - 35 * u, 20 * u, '#cfe', 'center');
+    const sy = this.touch ? 130 * u : H - 70 * u;
+    this.text(`${Math.round(Math.abs(p.speed) * 3.9)}`, W / 2, sy, 46 * u, '#fff', 'center');
+    this.text('km/h', W / 2, sy + 35 * u, 20 * u, '#cfe', 'center');
     if (p.drifting && p.driftLv > 0) this.text(['', 'ミニターボ', 'スーパーターボ', 'ウルトラターボ'][p.driftLv], W / 2, H - 120 * u, 26 * u, rgbCss(SPARK[p.driftLv]), 'center');
     // 順位表
-    let y = 150 * u; const lx = W - 205 * u;
+    const rs = this.touch ? 0.78 : 1; // タッチ操作のときは小さく(ボタンと重ならないように)
+    let y = (this.touch ? 135 : 150) * u; const lx = W - 205 * rs * u;
     g.ranking.forEach((k, i) => {
       const me = k === p;
       c.fillStyle = me ? 'rgba(255,220,80,0.45)' : 'rgba(10,14,30,0.5)';
-      c.fillRect(lx, y - 13 * u, 175 * u, 26 * u);
-      c.fillStyle = rgbCss(k.drv.color); c.fillRect(lx + 28 * u, y - 13 * u, 4 * u, 26 * u);
-      if (!drawAtlas(c, `drv_${k.drv.animal}_front`, lx + 44 * u, y, 24 * u)) { c.fillStyle = rgbCss(k.drv.color); c.fillRect(lx + 36 * u, y - 8 * u, 16 * u, 16 * u); }
-      this.text(String(i + 1), lx + 16 * u, y, 18 * u, '#fff', 'center');
-      this.text(k.name + (k.finished ? ' 🏁' : ''), lx + 56 * u, y, 17 * u, me ? '#ffe14a' : '#fff', 'left');
-      y += 29 * u;
+      c.fillRect(lx, y - 13 * rs * u, 175 * rs * u, 26 * rs * u);
+      c.fillStyle = rgbCss(k.drv.color); c.fillRect(lx + 28 * rs * u, y - 13 * rs * u, 4 * rs * u, 26 * rs * u);
+      if (!drawAtlas(c, `drv_${k.drv.animal}_front`, lx + 44 * rs * u, y, 24 * rs * u)) { c.fillStyle = rgbCss(k.drv.color); c.fillRect(lx + 36 * rs * u, y - 8 * rs * u, 16 * rs * u, 16 * rs * u); }
+      this.text(String(i + 1), lx + 16 * rs * u, y, 18 * rs * u, '#fff', 'center');
+      this.text(k.name + (k.finished ? ' 🏁' : ''), lx + 56 * rs * u, y, 17 * rs * u, me ? '#ffe14a' : '#fff', 'left');
+      y += 29 * rs * u;
     });
-    this.minimap(g);
+    if (!this.touch) this.minimap(g);
     // 逆走
     if (p.wrong > 1 && !p.finished) this.text('⚠ 逆走しています!', W / 2, H * 0.3, 48 * u, '#ff5a5a', 'center');
     // カウントダウン

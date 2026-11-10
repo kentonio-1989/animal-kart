@@ -20,6 +20,7 @@ class Game {
     this.cam = { eye: [0, 10, -20], h: 0, y: 5, fov: 68, shake: 0 };
     this.acc = 0; this.last = performance.now() / 1000;
     this._input(); this._menu();
+    this.touchPad = new TouchPad(this);
     addEventListener('resize', () => { this.R.resize(); this.hud.resize(); });
     this.load(0, null, 1); this.state = 'menu'; this.canDrive = true;
     requestAnimationFrame(t => this.loop(t));
@@ -87,7 +88,7 @@ class Game {
   }
   useItem() {
     const p = this.player;
-    if (p && (this.state === 'race') && !p.finished && p.spin <= 0) this.items.use(p, this.keys.ArrowDown || this.keys.KeyS || this.gpBack ? true : false);
+    if (p && (this.state === 'race') && !p.finished && p.spin <= 0) this.items.use(p, this.keys.ArrowDown || this.keys.KeyS || this.gpBack || (this.touchPad && this.touchPad.st.brake) ? true : false);
   }
   readInput() {
     const k = this.keys, p = this.player, inp = p.input;
@@ -109,6 +110,7 @@ class Game {
       for (let i = 0; i < gp.buttons.length; i++) this.gpPrev[i] = b(i);
     }
     inp.steer = steer; inp.throttle = thr; inp.brake = brake; inp.drift = drift;
+    if (this.touchPad) this.touchPad.apply(inp, this.state);
   }
 
   // ---- 進行 ----
@@ -264,6 +266,7 @@ class Game {
       const p = this.player, racing = this.state !== 'menu';
       SND.engine(clamp(Math.abs(p.speed) / 40, 0, 1), racing, p.boost > 0 || p.rocket > 0);
     }
+    if (this.touchPad) this.touchPad.update();
     this.render(this.state === 'paused' ? 0 : dt);
     requestAnimationFrame(t => this.loop(t));
   }
