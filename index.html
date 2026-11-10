@@ -77,7 +77,10 @@
   #pause h2::before { content: ''; }
   #pause .big { margin-top: 10px; }
   #err { display: none; position: fixed; left: 16px; right: 16px; bottom: 16px; padding: 12px; background: #a01c2c; font-size: 14px; z-index: 10; border: 3px solid #fff; }
-  @media (max-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } .row { grid-template-columns: 1fr; } .panel { padding: 12px; } }
+  canvas.avatar { width: 56px; height: 56px; margin: 0; }
+  @media (max-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } .row { grid-template-columns: 1fr; } .panel { padding: 12px; }
+    .driver { grid-template-columns: 1fr; } .avatar, canvas.avatar { grid-row: auto; width: 48px; height: 48px; margin-bottom: 4px; }
+    .nm { font-size: 16px; } .nm small { display: block; margin-left: 0; } }
 </style>
 </head>
 <body>
